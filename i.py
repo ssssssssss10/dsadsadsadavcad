@@ -8,14 +8,12 @@ import instaloader
 import sys
 import requests
 
-no_photo = open("no_photo.jpg", "rb").read()
-
 
 class MainWindow(QWidget):
     def __init__(self, *args, **kwars):
         super().__init__(*args, **kwars)
 
-        # Sizes
+        # Характеристики окна
         self.resize(200, 200)
         self.setMaximumSize(QSize(3272, 3402))
         self.setMinimumSize(326, 339)
@@ -26,7 +24,6 @@ class MainWindow(QWidget):
         self.search_line.editingFinished.connect(self.search_acc)
         self.mess_label = QLabel(self)
         self.mess_label.hide()
-        self.mess_label.setText("Это приватный аккаунт")
         self.mess_label.resize(120, 40)
         self.mess_label.setAlignment(Fl.AlignHCenter | Fl.AlignTop)
 
@@ -56,7 +53,8 @@ class MainWindow(QWidget):
         flags = flags | Fl.WindowFullScreen | Fl.WindowCloseButtonHint
         flags = flags | Fl.WindowMaximizeButtonHint
         self.setWindowFlags(flags)
-        # Vars
+
+        # Остальное
         self.instloader_instance = instaloader.Instaloader()
         self.sh_profile = None
         self.show_profile = False
@@ -69,11 +67,12 @@ class MainWindow(QWidget):
     def resizeEvent(self, resize_event):
         self.init_ui()
 
-    def init_ui(self):
+    def init_ui(self):  # Корректировка интерфейса под окно
         x_y = self.size()
         x = self.size().width()
         y = self.size().height()
         del x_y
+        # Размеры поисковой строки и отступы для неё
         search_w = int(0.81595 * x)
         search_h = int(y * 0.0442)
         search_x = int(x * 0.0613)
@@ -81,6 +80,7 @@ class MainWindow(QWidget):
         self.search_line.resize(search_w, search_h)
 
         b_suze = int(x * 0.09203) - 4
+        # Кнопки лево и право
         self.right.resize(b_suze, search_h)
         self.right.move(x - b_suze - 2, search_y)
         self.left.resize(b_suze, search_h)
@@ -88,6 +88,8 @@ class MainWindow(QWidget):
         search_x = 4 + b_suze
         self.search_line.move(search_x, search_y)
         for i in range(0, 3):
+            # Задание аднных, необходимых для правильного отображения
+            # поисковой выдачи
             self.search_lines[i].x = search_x
             self.search_lines[i].y = search_y + (i + 1) * search_h
             self.search_lines[i].width = search_w
@@ -96,6 +98,7 @@ class MainWindow(QWidget):
                 self.search_lines[i].generate()
 
         if self.show_profile:
+            # Если профиль открыт
 
             if self.sh_profile.inst_profile.is_private:
                 self.mess_label.show()
@@ -106,6 +109,7 @@ class MainWindow(QWidget):
             b_x = int(x / 2 - 1.5 * pic_size)
             b_y = search_h + search_y + int(0.0184 * y)
             self.mess_label.move(int(x / 2) - 60, b_y + 5)
+            # Задаём описание профиля при наведении
             tt = str(
                 "Username: " + self.sh_profile.inst_profile.username)
             tt += "; ID: " + str(self.sh_profile.inst_profile.userid) + "; "
@@ -115,11 +119,16 @@ class MainWindow(QWidget):
                 " verified" if self.sh_profile.inst_profile.is_verified else "")
             tool_tip = tt + "\n" + "Подписчиков: " + str(
                 self.sh_profile.inst_profile.followers) + "\nПодписок: "
-            tool_tip += str(self.sh_profile.inst_profile.followees) +\
-                "\nБиография:\n" + self.sh_profile.inst_profile.biography
+            tool_tip += str(self.sh_profile.inst_profile.followees) + \
+                        "\nБиография:\n" + self.sh_profile.inst_profile.biography
             if self.sh_profile.inst_profile.biography == "":
                 tool_tip = tool_tip[: -1]
             self.setToolTip(tool_tip)
+
+            # Отображение картинок:
+            #   - фокусировка в центре и сжатие до нужного размера
+            #   - перемещение соответствующего Label на экране
+            #   - задание подсказки о посте при наведении
             for i in range(3):
                 for j in range(3):
                     if i * 3 + j >= self.loaded:
@@ -169,17 +178,19 @@ class MainWindow(QWidget):
                         text_tip[:len(text_tip) - 1])
                     self.labels_px[i][j].show()
 
+        # Изменение кегля поисковой строки
         font = self.search_line.font()
         font.setPointSize(int(0.567 * int(y * 0.0442)))
         self.search_line.setFont(font)
 
-    def open_link(self):
+    def open_link(self):  # Универсальное открытие ссылки
         ur = "https://instagram.com/p/" + self.sender().url.split()[1]
         ur = ur[:len(ur) - 1]
         print(ur)
         QDesktopServices.openUrl(QUrl(ur))
 
-    def search_acc(self):
+    def search_acc(
+            self):  # Поиск аккаунта и отображение соответсвующей информации
         t = self.search_line.text()
         if t == "":
             for i in range(3):
@@ -205,7 +216,7 @@ class MainWindow(QWidget):
                 self.search_lines[1].generate()
                 self.search_lines[1].show()
 
-    def __search_acc__(self, text: str):
+    def __search_acc__(self, text: str):  # Именно поиск аккаунта
         result = []
         try:
             res = MProfile(instaloader.Profile.from_username(
@@ -230,9 +241,10 @@ class MainWindow(QWidget):
             pass
         return result
 
-    def show_profile_f(self):
+    def show_profile_f(self):  # Первое отображение профиля
         self.mess_label.hide()
-
+        self.right.hide()
+        self.left.hide()
         for i in range(3):
             self.search_lines[i].message = False
             self.search_lines[i].hide()
@@ -250,12 +262,17 @@ class MainWindow(QWidget):
         self.setWindowIcon(QIcon(ico))
         self.search_line.setText("")
         self.loaded = 0
+
+        # Загрузка фото
         for i in self.sh_profile.inst_profile.get_posts():
             self.sh_profile.add_image(requests.get(i.url).content)
             self.sh_profile.add_post(i)
             self.loaded += 1
             if self.loaded == 10:
                 break
+
+        # Проверка на исключительные случаи
+        #   0 фото или приватный профиль
         if self.loaded == 0:
             self.mess_label.setText("Публикаций пока нет")
             self.mess_label.show()
@@ -271,7 +288,7 @@ class MainWindow(QWidget):
         self.set_table(0)
         self.init_ui()
 
-    def set_table(self, ind):
+    def set_table(self, ind):  # Задание соответствующей страницы 3*3
         self.clear_table()
         ind *= 9
         for i in range(3):
@@ -284,14 +301,14 @@ class MainWindow(QWidget):
                     self.labels_px[i][j].url = str(
                         self.sh_profile.posts[i * 3 + j + ind])
 
-    def clear_table(self):
+    def clear_table(self):  # Очистка от предыдущей страницы
         for i in range(3):
             for j in range(3):
                 self.pixmaps[i][j] = QPixmap()
                 self.labels_px[i][j].setPixmap(QPixmap())
                 self.labels_px[i][j].url = ""
 
-    def next_table(self):
+    def next_table(self):  # Отображение следующей страницы 3*3
 
         self.tables += 1
         if self.tables >= 1:
@@ -313,7 +330,7 @@ class MainWindow(QWidget):
         self.set_table(self.tables)
         self.init_ui()
 
-    def prev_table(self):
+    def prev_table(self):  # Отображение предыдущей страницы 3*3
         self.tables -= 1
         if self.tables == 0:
             self.left.hide()
@@ -322,7 +339,7 @@ class MainWindow(QWidget):
         self.init_ui()
 
 
-class MProfile:
+class MProfile:  # Класс с сохранением уже полученной информации
     def __init__(self, profile: instaloader.Profile):
         self.images = []
         self.inst_profile = profile
@@ -344,7 +361,7 @@ class MProfile:
         return self.post[item]
 
 
-class SearchLine:
+class SearchLine:  # Поисковой результат
     def __init__(self, parent):
         self.profile = None
         self.x = 0
@@ -361,10 +378,10 @@ class SearchLine:
         self.text = None
         self.hide()
 
-    def new_profile(self, profile: MProfile):
+    def new_profile(self, profile: MProfile):  # Новый профиль для отображения
         self.profile = profile
 
-    def generate(self):
+    def generate(self):     # Отображение в соответствие с размерами
         size_pic = min(self.height, self.width)
         self.label_for_pic.resize(size_pic, size_pic)
         if not self.message:
@@ -404,18 +421,18 @@ class SearchLine:
             self.label_for_text.move(self.x + 4, self.y)
             self.label_for_text.setText(self.text)
 
-    def show(self):
+    def show(self):     # Показать элементы данного блока
         self.see = True
         self.label_for_text.show()
         self.label_for_pic.show()
 
-    def hide(self):
+    def hide(self):     # Скрыть элементы данного блока
         self.see = False
         self.label_for_pic.hide()
         self.label_for_text.hide()
 
 
-class ClickedLabel(QLabel):
+class ClickedLabel(QLabel):  # QLabel с возможность connect к clicked
     clicked = pyqtSignal()
 
     def mouseReleaseEvent(self, e):
@@ -423,7 +440,7 @@ class ClickedLabel(QLabel):
         self.clicked.emit()
 
 
-class MLabel(QLabel):
+class MLabel(QLabel):  # Qlabel с ссылкой
     clicked = pyqtSignal()
 
     def __init__(self, *args, **kwars):
